@@ -1,11 +1,3 @@
-"""!@brief Ejemplo de funcionamiento de cámaras Raspberry Pi y FLIR Lepton
-
-@author: Maryam del Mar Correa
-@version 1.0
-@date 2021
-
-"""
-
 from PyQt5.QtWidgets import *
 from PyQt5 import QtCore
 from PyQt5.QtCore import Qt
@@ -29,7 +21,7 @@ class Window(QWidget):
     
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Demo de cámaras para Raspberry Pi")
+        self.setWindowTitle("Demo de camaras para Raspberry Pi")
         self.setGeometry(100, 100, int(resWidth*0.7), int(resHeight*0.45))
         self.UI()
         
@@ -43,10 +35,13 @@ class Window(QWidget):
         self.text1.resize(200, 30)
         self.text2 = QLabel("Raspberry Pi Camera", self)
         self.text2.resize(200, 30)
+        self.text3 = QLabel("Ejemplo de detección de bordes", self)
         self.image1 = QLabel(self)
         self.image1.setPixmap(QPixmap('output22.jpg'))
         self.image1.move(150, 50)
         self.image2 = QLabel(self)
+        self.image3 = QLabel(self)
+        self.image3.setPixmap(QPixmap('foto_procesada.jpg'))
         camera.capture('foto.jpg')
         
         #Adding widgets to layouts
@@ -54,10 +49,12 @@ class Window(QWidget):
         mainLayout.addWidget(self.image1, 1, 0, QtCore.Qt.AlignCenter)
         mainLayout.addWidget(self.text2, 0, 1, QtCore.Qt.AlignCenter)
         mainLayout.addWidget(self.image2, 1, 1, QtCore.Qt.AlignCenter)
+        mainLayout.addWidget(self.text3, 0, 2, QtCore.Qt.AlignCenter)
+        mainLayout.addWidget(self.image3, 1, 2, QtCore.Qt.AlignCenter)
         
         #Setting up timer for image acquisition
         self.timer = QTimer()
-        self.timer.setInterval(100)
+        self.timer.setInterval(50)
         self.timer.timeout.connect(self.loadImage)
         self.timer.start()
         
@@ -85,8 +82,23 @@ class Window(QWidget):
         self.image2.setPixmap(smaller_pixmap)
         self.image2.move(150, 50)
         
+        # Draw sketch by using a canny filter
+        img_orig = cv2.imread('foto.jpg')
+        img_orig = cv2.resize(img_orig, (480, 300), interpolation=cv2.INTER_AREA)
+        img_gray = cv2.cvtColor(img_orig, cv2.COLOR_BGR2GRAY)
+        img_gray_blur = cv2.GaussianBlur(img_gray, (3,3), 0)
+        img_canny = cv2.Canny(img_gray_blur, 20, 50)
+        ret, mask = cv2.threshold(img_canny, 70, 255, cv2.THRESH_BINARY_INV)
+        cv2.imwrite('foto_procesada.jpg',mask)
+        original_pixmap_alt = QPixmap('foto_procesada.jpg')
+        smaller_pixmap_alt = original_pixmap_alt.scaled(480, 300, Qt.KeepAspectRatio, Qt.FastTransformation)
+        self.image3.setPixmap(smaller_pixmap_alt)
+        self.image3.move(150, 50)
+        
         #Refresh UI
         self.show()
+        
+        
         
 def main():
     App = QApplication(sys.argv)
